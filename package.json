@@ -1,0 +1,14 @@
+{
+  "name": "music-site-workspace",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "build": "node scripts/run-workspaces.mjs build",
+    "lint": "node scripts/run-workspaces.mjs lint",
+    "test": "node scripts/run-workspaces.mjs test",
+    "users:list": "npm run users:list --workspace backend"
+  }
+}
