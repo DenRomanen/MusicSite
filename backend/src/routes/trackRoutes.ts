@@ -1,16 +1,7 @@
-import fs from 'node:fs'
-import { randomUUID } from 'node:crypto'
-import path from 'node:path'
 import multer from 'multer'
 import { Router } from 'express'
-import { env } from '../config/env.js'
 import { attachOptionalUser, requireAuth } from '../middleware/auth.js'
-import {
-  createTrack,
-  deleteTrack,
-  listTracks,
-  removeUploadedFile
-} from '../services/trackService.js'
+import { createTrack, deleteTrack, listTracks } from '../services/trackService.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import {
   getAudioFileValidationMessage,
@@ -18,7 +9,7 @@ import {
 } from '../utils/fileValidation.js'
 import { HttpError } from '../utils/httpError.js'
 
-fs.mkdirSync(env.uploadsPath, { recursive: true })
+const TRACK_TEXT_FIELD_MAX_LENGTH = 80
 
 const upload = multer({
   fileFilter: (_request, file, callback) => {
@@ -32,14 +23,7 @@ const upload = multer({
   limits: {
     fileSize: 25 * 1024 * 1024
   },
-  storage: multer.diskStorage({
-    destination: (_request, _file, callback) => {
-      callback(null, env.uploadsPath)
-    },
-    filename: (_request, file, callback) => {
-      callback(null, `${randomUUID()}${path.extname(file.originalname).toLowerCase()}`)
-    }
-  })
+  storage: multer.memoryStorage()
 })
 
 export const trackRouter = Router()
@@ -48,7 +32,7 @@ trackRouter.get(
   '/',
   attachOptionalUser,
   asyncHandler(async (request, response) => {
-    response.json(listTracks(request, request.authenticatedUser?.id))
+    response.json(await listTracks(request.authenticatedUser?.id))
   }),
 )
 
@@ -66,25 +50,31 @@ trackRouter.post(
       throw new HttpError(400, 'Аудиофайл обязателен')
     }
 
-    if (!title?.trim() || !artist?.trim()) {
-      await removeUploadedFile(request.file.filename)
+    const normalizedTitle = typeof title === 'string' ? title.trim() : ''
+    const normalizedArtist = typeof artist === 'string' ? artist.trim() : ''
+
+    if (!normalizedTitle || !normalizedArtist) {
       throw new HttpError(400, 'Название и исполнитель обязательны')
     }
 
-    try {
-      const createdTrack = createTrack({
-        artist: artist.trim(),
-        file: request.file,
-        request,
-        title: title.trim(),
-        uploadedBy: request.authenticatedUser!.id
-      })
-
-      response.status(201).json(createdTrack)
-    } catch (error) {
-      await removeUploadedFile(request.file.filename)
-      throw error
+    if (
+      normalizedTitle.length > TRACK_TEXT_FIELD_MAX_LENGTH ||
+      normalizedArtist.length > TRACK_TEXT_FIELD_MAX_LENGTH
+    ) {
+      throw new HttpError(
+        400,
+        'Название и исполнитель должны быть не длиннее 80 символов',
+      )
     }
+
+    const createdTrack = await createTrack({
+      artist: normalizedArtist,
+      file: request.file,
+      title: normalizedTitle,
+      uploadedBy: request.authenticatedUser!.id
+    })
+
+    response.status(201).json(createdTrack)
   }),
 )
 

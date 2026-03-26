@@ -35,6 +35,6 @@ authRouter.get(
   '/me',
   requireAuth,
   asyncHandler(async (request, response) => {
-    response.json(getCurrentUser(request.authenticatedUser!.id))
+    response.json(await getCurrentUser(request.authenticatedUser!.id))
   }),
 )

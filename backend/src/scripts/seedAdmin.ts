@@ -2,7 +2,7 @@ import { initializeDatabase } from '../db/database.js'
 import { ensureAdminUser } from '../services/authService.js'
 
 const seedAdminUser = async () => {
-  initializeDatabase()
+  await initializeDatabase()
   const wasCreated = await ensureAdminUser()
 
   console.log(

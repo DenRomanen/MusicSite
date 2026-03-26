@@ -1,48 +1,46 @@
-import fs from 'node:fs'
+import fs from 'node:fs/promises'
 import path from 'node:path'
-import { DatabaseSync } from 'node:sqlite'
+import { Pool, QueryResult, QueryResultRow } from 'pg'
 import { env } from '../config/env.js'
 
-let databaseInstance: DatabaseSync | null = null
+let databasePool: Pool | null = null
+let initializationPromise: Promise<Pool> | null = null
 
-const databaseSchema = `
-  PRAGMA journal_mode = WAL;
-
-  CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    login TEXT NOT NULL UNIQUE,
-    password_hash TEXT NOT NULL,
-    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-  );
-
-  CREATE TABLE IF NOT EXISTS tracks (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    title TEXT NOT NULL,
-    artist TEXT NOT NULL,
-    filename TEXT NOT NULL UNIQUE,
-    original_filename TEXT NOT NULL,
-    mime_type TEXT NOT NULL,
-    size INTEGER NOT NULL,
-    uploaded_by INTEGER NOT NULL,
-    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (uploaded_by) REFERENCES users (id) ON DELETE CASCADE
-  );
-
-  CREATE INDEX IF NOT EXISTS idx_tracks_uploaded_by ON tracks (uploaded_by);
-  CREATE INDEX IF NOT EXISTS idx_tracks_created_at ON tracks (created_at DESC);
-`
-
-export const initializeDatabase = () => {
-  if (databaseInstance) {
-    return databaseInstance
+const getDatabasePool = () => {
+  if (databasePool) {
+    return databasePool
   }
 
-  fs.mkdirSync(path.dirname(env.databasePath), { recursive: true })
+  if (!env.databaseUrl) {
+    throw new Error('DATABASE_URL is required to connect to PostgreSQL')
+  }
 
-  databaseInstance = new DatabaseSync(env.databasePath)
-  databaseInstance.exec(databaseSchema)
+  databasePool = new Pool({
+    connectionString: env.databaseUrl
+  })
 
-  return databaseInstance
+  return databasePool
 }
 
-export const getDatabase = () => initializeDatabase()
+export const query = async <Row extends QueryResultRow>(
+  text: string,
+  values?: unknown[],
+): Promise<QueryResult<Row>> => getDatabasePool().query<Row>(text, values)
+
+export const initializeDatabase = async () => {
+  if (initializationPromise) {
+    return initializationPromise
+  }
+
+  initializationPromise = (async () => {
+    const schemaFilePath = path.join(env.backendRoot, 'sql', 'init.sql')
+    const schemaSql = await fs.readFile(schemaFilePath, 'utf-8')
+    const pool = getDatabasePool()
+
+    await pool.query(schemaSql)
+
+    return pool
+  })()
+
+  return initializationPromise
+}

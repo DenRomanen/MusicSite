@@ -1,4 +1,4 @@
-import { getDatabase } from '../db/database.js'
+import { initializeDatabase, query } from '../db/database.js'
 
 type UserSummaryRow = {
   id: number
@@ -6,11 +6,12 @@ type UserSummaryRow = {
   created_at: string
 }
 
-const listUsers = () => {
-  const database = getDatabase()
-  const userRows = database
-    .prepare('SELECT id, login, created_at FROM users ORDER BY id')
-    .all() as UserSummaryRow[]
+const listUsers = async () => {
+  await initializeDatabase()
+  const result = await query<UserSummaryRow>(
+    'SELECT id, login, created_at FROM users ORDER BY id',
+  )
+  const userRows = result.rows
 
   if (userRows.length === 0) {
     console.log('No users found in the database')
@@ -20,4 +21,4 @@ const listUsers = () => {
   console.table(userRows)
 }
 
-listUsers()
+void listUsers()

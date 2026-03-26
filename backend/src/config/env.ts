@@ -8,34 +8,52 @@ const repositoryRoot =
     : currentWorkingDirectory
 const backendRoot = path.join(repositoryRoot, 'backend')
 
-dotenv.config({
-  path: path.join(backendRoot, '.env')
-})
+const loadEnvironmentFile = (filePath: string) => {
+  dotenv.config({
+    path: filePath,
+    override: false,
+    quiet: true
+  })
+}
 
-const resolvePathFromRepositoryRoot = (value: string, fallbackValue: string) => {
-  const resolvedValue = value || fallbackValue
+loadEnvironmentFile(path.join(repositoryRoot, '.env'))
+loadEnvironmentFile(path.join(repositoryRoot, '.env.local'))
+loadEnvironmentFile(path.join(backendRoot, '.env'))
+loadEnvironmentFile(path.join(backendRoot, '.env.local'))
 
-  if (path.isAbsolute(resolvedValue)) {
-    return resolvedValue
+const resolveFrontendUrls = () => {
+  const rawFrontendUrl = process.env.FRONTEND_URL?.trim()
+
+  if (!rawFrontendUrl) {
+    return ['http://localhost:5173']
   }
 
-  return path.resolve(repositoryRoot, resolvedValue)
+  return rawFrontendUrl
+    .split(',')
+    .map((frontendUrl) => frontendUrl.trim())
+    .filter(Boolean)
 }
 
 export const env = {
   backendRoot,
-  corsOrigin: process.env.CORS_ORIGIN || 'http://localhost:5173',
-  databasePath: resolvePathFromRepositoryRoot(
-    process.env.DATABASE_PATH || '',
-    'backend/data/music.db',
-  ),
+  databaseUrl: process.env.DATABASE_URL?.trim() ?? '',
+  frontendUrls: resolveFrontendUrls(),
   jwtSecret: process.env.JWT_SECRET || 'change-this-secret',
-  port: Number(process.env.PORT || 4000),
+  port: Number(process.env.PORT || 10000),
   repositoryRoot,
-  uploadsPath: resolvePathFromRepositoryRoot(
-    process.env.UPLOADS_PATH || '',
-    'uploads/audio',
-  ),
-  adminLogin: process.env.ADMIN_LOGIN || 'musicadmin',
-  adminPassword: process.env.ADMIN_PASSWORD || 'MusicAdmin2026!'
+  supabaseBucket: process.env.SUPABASE_BUCKET?.trim() || 'audio',
+  supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() ?? '',
+  supabaseUrl: process.env.SUPABASE_URL?.trim() ?? ''
+}
+
+export const getMissingRuntimeEnv = () => {
+  const requiredEnvironmentVariables = [
+    ['DATABASE_URL', env.databaseUrl],
+    ['SUPABASE_URL', env.supabaseUrl],
+    ['SUPABASE_SERVICE_ROLE_KEY', env.supabaseServiceRoleKey]
+  ] as const
+
+  return requiredEnvironmentVariables
+    .filter(([, value]) => !value)
+    .map(([environmentVariableName]) => environmentVariableName)
 }

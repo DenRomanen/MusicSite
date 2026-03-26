@@ -13,12 +13,14 @@
     "test": "vitest"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.57.5",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
-    "multer": "^2.0.2"
+    "multer": "^2.0.2",
+    "pg": "^8.16.3"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
@@ -27,6 +29,7 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/multer": "^2.0.0",
     "@types/node": "^24.10.1",
+    "@types/pg": "^8.15.6",
     "eslint": "^9.39.1",
     "globals": "^16.5.0",
     "prettier": "^3.6.2",

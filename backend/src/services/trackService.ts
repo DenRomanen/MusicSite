@@ -1,16 +1,13 @@
-import fs from 'node:fs/promises'
-import path from 'node:path'
-import { Request } from 'express'
-import { env } from '../config/env.js'
-import { getDatabase } from '../db/database.js'
+import { query } from '../db/database.js'
+import { removeStorageFile, uploadAudioFile } from './storageService.js'
 import { HttpError } from '../utils/httpError.js'
 
 type TrackRow = {
   id: number
   title: string
   artist: string
-  filename: string
-  original_filename: string
+  file_url: string
+  file_path: string
   mime_type: string
   size: number
   uploaded_by: number
@@ -20,154 +17,116 @@ type TrackRow = {
 type CreateTrackInput = {
   artist: string
   file: Express.Multer.File
-  request: Request
   title: string
   uploadedBy: number
 }
 
-const mapTrackRowToResponse = (
-  trackRow: TrackRow,
-  viewerId: number | undefined,
-  request: Request,
-) => {
-  const requestHost = request.get('host')
+const mapTrackRowToResponse = (trackRow: TrackRow, viewerId: number | undefined) => ({
+  id: trackRow.id,
+  title: trackRow.title,
+  artist: trackRow.artist,
+  audioUrl: trackRow.file_url,
+  createdAt: new Date(trackRow.created_at).toISOString(),
+  canDelete: viewerId === trackRow.uploaded_by
+})
 
-  if (!requestHost) {
-    throw new HttpError(500, 'Не удалось определить адрес сервера')
-  }
-
-  return {
-    id: trackRow.id,
-    title: trackRow.title,
-    artist: trackRow.artist,
-    audioUrl: new URL(
-      `/uploads/${trackRow.filename}`,
-      `${request.protocol}://${requestHost}`,
-    ).toString(),
-    createdAt: trackRow.created_at,
-    canDelete: viewerId === trackRow.uploaded_by
-  }
-}
-
-export const listTracks = (request: Request, viewerId?: number) => {
-  const database = getDatabase()
-  const trackRows = database
-    .prepare(
-      `
-        SELECT
-          id,
-          title,
-          artist,
-          filename,
-          original_filename,
-          mime_type,
-          size,
-          uploaded_by,
-          created_at
-        FROM tracks
-        ORDER BY datetime(created_at) DESC, id DESC
-      `,
-    )
-    .all() as TrackRow[]
-
-  return trackRows.map((trackRow) =>
-    mapTrackRowToResponse(trackRow, viewerId, request),
+export const listTracks = async (viewerId?: number) => {
+  const result = await query<TrackRow>(
+    `
+      SELECT
+        id,
+        title,
+        artist,
+        file_url,
+        file_path,
+        mime_type,
+        size,
+        uploaded_by,
+        created_at
+      FROM tracks
+      ORDER BY created_at DESC, id DESC
+    `,
   )
+
+  return result.rows.map((trackRow) => mapTrackRowToResponse(trackRow, viewerId))
 }
 
-export const createTrack = ({
+export const createTrack = async ({
   artist,
   file,
-  request,
   title,
   uploadedBy
 }: CreateTrackInput) => {
-  const database = getDatabase()
-  const insertResult = database
-    .prepare(
+  const uploadedAudio = await uploadAudioFile(file)
+  let createdTrack: TrackRow | undefined
+
+  try {
+    const result = await query<TrackRow>(
       `
         INSERT INTO tracks (
           title,
           artist,
-          filename,
-          original_filename,
+          file_url,
+          file_path,
           mime_type,
           size,
           uploaded_by
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)
-      `,
-    )
-    .run(
-      title,
-      artist,
-      file.filename,
-      file.originalname,
-      file.mimetype,
-      file.size,
-      uploadedBy,
-    )
-
-  const trackId = Number(insertResult.lastInsertRowid)
-  const createdTrack = database
-    .prepare(
-      `
-        SELECT
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+        RETURNING
           id,
           title,
           artist,
-          filename,
-          original_filename,
+          file_url,
+          file_path,
           mime_type,
           size,
           uploaded_by,
           created_at
-        FROM tracks
-        WHERE id = ?
       `,
+      [
+        title,
+        artist,
+        uploadedAudio.fileUrl,
+        uploadedAudio.filePath,
+        file.mimetype,
+        file.size,
+        uploadedBy
+      ],
     )
-    .get(trackId) as TrackRow | undefined
+
+    createdTrack = result.rows[0]
+  } catch (error) {
+    await removeStorageFile(uploadedAudio.filePath)
+    throw error
+  }
 
   if (!createdTrack) {
     throw new HttpError(500, 'Не удалось сохранить трек')
   }
 
-  return mapTrackRowToResponse(createdTrack, uploadedBy, request)
-}
-
-export const removeUploadedFile = async (filename: string) => {
-  try {
-    await fs.unlink(path.join(env.uploadsPath, filename))
-  } catch (error) {
-    if (
-      !(error instanceof Error) ||
-      !('code' in error) ||
-      error.code !== 'ENOENT'
-    ) {
-      throw error
-    }
-  }
+  return mapTrackRowToResponse(createdTrack, uploadedBy)
 }
 
 export const deleteTrack = async (trackId: number, authenticatedUserId: number) => {
-  const database = getDatabase()
-  const existingTrack = database
-    .prepare(
-      `
-        SELECT
-          id,
-          title,
-          artist,
-          filename,
-          original_filename,
-          mime_type,
-          size,
-          uploaded_by,
-          created_at
-        FROM tracks
-        WHERE id = ?
-      `,
-    )
-    .get(trackId) as TrackRow | undefined
+  const result = await query<TrackRow>(
+    `
+      SELECT
+        id,
+        title,
+        artist,
+        file_url,
+        file_path,
+        mime_type,
+        size,
+        uploaded_by,
+        created_at
+      FROM tracks
+      WHERE id = $1
+      LIMIT 1
+    `,
+    [trackId],
+  )
+  const existingTrack = result.rows[0]
 
   if (!existingTrack) {
     throw new HttpError(404, 'Трек не найден')
@@ -177,6 +136,6 @@ export const deleteTrack = async (trackId: number, authenticatedUserId: number) 
     throw new HttpError(403, 'Можно удалять только собственные треки')
   }
 
-  database.prepare('DELETE FROM tracks WHERE id = ?').run(trackId)
-  await removeUploadedFile(existingTrack.filename)
+  await removeStorageFile(existingTrack.file_path)
+  await query('DELETE FROM tracks WHERE id = $1', [trackId])
 }

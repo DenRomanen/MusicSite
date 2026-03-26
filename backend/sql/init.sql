@@ -1,0 +1,21 @@
+CREATE TABLE IF NOT EXISTS users (
+  id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  login TEXT NOT NULL UNIQUE,
+  password_hash TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS tracks (
+  id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  title VARCHAR(80) NOT NULL,
+  artist VARCHAR(80) NOT NULL,
+  file_url TEXT NOT NULL,
+  file_path TEXT NOT NULL UNIQUE,
+  mime_type TEXT NOT NULL,
+  size INTEGER NOT NULL CHECK (size > 0),
+  uploaded_by INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_tracks_uploaded_by ON tracks (uploaded_by);
+CREATE INDEX IF NOT EXISTS idx_tracks_created_at ON tracks (created_at DESC);

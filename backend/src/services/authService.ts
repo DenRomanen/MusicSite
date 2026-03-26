@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs'
 import jwt, { JwtPayload } from 'jsonwebtoken'
 import { env } from '../config/env.js'
-import { getDatabase } from '../db/database.js'
+import { query } from '../db/database.js'
 import { HttpError } from '../utils/httpError.js'
 
 type UserRow = {
@@ -15,40 +15,45 @@ export type AuthenticatedUser = {
   login: string
 }
 
+const ADMIN_LOGIN = 'musicadmin'
+const ADMIN_PASSWORD = 'MusicAdmin2026!'
+
 const toAuthenticatedUser = (userRow: Pick<UserRow, 'id' | 'login'>) => ({
   id: userRow.id,
   login: userRow.login
 })
 
-const findUserByLogin = (login: string) => {
-  const database = getDatabase()
+const findUserByLogin = async (login: string) => {
+  const result = await query<UserRow>(
+    'SELECT id, login, password_hash FROM users WHERE login = $1 LIMIT 1',
+    [login],
+  )
 
-  return database
-    .prepare('SELECT id, login, password_hash FROM users WHERE login = ?')
-    .get(login) as UserRow | undefined
+  return result.rows[0]
 }
 
-const findUserById = (userId: number) => {
-  const database = getDatabase()
+const findUserById = async (userId: number) => {
+  const result = await query<UserRow>(
+    'SELECT id, login, password_hash FROM users WHERE id = $1 LIMIT 1',
+    [userId],
+  )
 
-  return database
-    .prepare('SELECT id, login, password_hash FROM users WHERE id = ?')
-    .get(userId) as UserRow | undefined
+  return result.rows[0]
 }
 
 export const ensureAdminUser = async () => {
-  const existingAdmin = findUserByLogin(env.adminLogin)
+  const existingAdmin = await findUserByLogin(ADMIN_LOGIN)
 
   if (existingAdmin) {
     return false
   }
 
-  const passwordHash = await bcrypt.hash(env.adminPassword, 10)
-  const database = getDatabase()
+  const passwordHash = await bcrypt.hash(ADMIN_PASSWORD, 10)
 
-  database
-    .prepare('INSERT INTO users (login, password_hash) VALUES (?, ?)')
-    .run(env.adminLogin, passwordHash)
+  await query('INSERT INTO users (login, password_hash) VALUES ($1, $2)', [
+    ADMIN_LOGIN,
+    passwordHash
+  ])
 
   return true
 }
@@ -64,7 +69,7 @@ export const authenticateUser = async (
     throw new HttpError(400, 'Логин и пароль обязательны')
   }
 
-  const userRow = findUserByLogin(sanitizedLogin)
+  const userRow = await findUserByLogin(sanitizedLogin)
 
   if (!userRow) {
     throw new HttpError(401, 'Неверный логин или пароль')
@@ -110,8 +115,8 @@ export const verifyAccessToken = (token: string) => {
   }
 }
 
-export const getCurrentUser = (userId: number) => {
-  const userRow = findUserById(userId)
+export const getCurrentUser = async (userId: number) => {
+  const userRow = await findUserById(userId)
 
   if (!userRow) {
     throw new HttpError(401, 'Пользователь не найден')

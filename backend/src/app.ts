@@ -7,13 +7,22 @@ import { trackRouter } from './routes/trackRoutes.js'
 
 export const app = express()
 
+const isAllowedOrigin = (origin: string | undefined) => {
+  if (!origin) {
+    return true
+  }
+
+  return env.frontendUrls.includes(origin)
+}
+
 app.use(
   cors({
-    origin: env.corsOrigin
+    origin: (origin, callback) => {
+      callback(null, isAllowedOrigin(origin))
+    }
   }),
 )
 app.use(express.json())
-app.use('/uploads', express.static(env.uploadsPath))
 
 app.use('/api/auth', authRouter)
 app.use('/api/tracks', trackRouter)
