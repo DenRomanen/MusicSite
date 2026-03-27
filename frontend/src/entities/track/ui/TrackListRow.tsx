@@ -6,6 +6,10 @@ import { Button } from '@/shared/ui/Button'
 type TrackListRowProps = {
   hasDeleteColumn: boolean
   isDeleting: boolean
+  onAudioElementChange: (
+    trackId: number,
+    audioElement: HTMLAudioElement | null,
+  ) => void
   onAudioEnded: (
     trackId: number,
     audioElement: HTMLAudioElement,
@@ -25,6 +29,7 @@ type TrackListRowProps = {
 export const TrackListRow = ({
   hasDeleteColumn,
   isDeleting,
+  onAudioElementChange,
   onAudioEnded,
   onAudioPause,
   onAudioPlay,
@@ -49,6 +54,10 @@ export const TrackListRow = ({
 
   const handleAudioEnded = (event: SyntheticEvent<HTMLAudioElement>) => {
     onAudioEnded(track.id, event.currentTarget)
+  }
+
+  const handleAudioElementChange = (audioElement: HTMLAudioElement | null) => {
+    onAudioElementChange(track.id, audioElement)
   }
 
   return (
@@ -83,6 +92,7 @@ export const TrackListRow = ({
           className="track-list__player"
           controls
           controlsList="nodownload"
+          ref={handleAudioElementChange}
           onEnded={handleAudioEnded}
           onPause={handleAudioPause}
           onPlay={handleAudioPlay}

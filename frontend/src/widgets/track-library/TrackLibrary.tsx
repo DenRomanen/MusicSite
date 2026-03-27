@@ -61,6 +61,10 @@ export const TrackLibrary = () => {
   const { isBootstrapping, token, user } = useAppSelector((state) => state.auth)
   const currentPlayingAudioRef = useRef<HTMLAudioElement | null>(null)
   const currentPlayingTrackIdRef = useRef<number | null>(null)
+  const trackAudioElementsRef = useRef(
+    new Map<number, HTMLAudioElement>(),
+  )
+  const pendingAutoPlayTrackIdRef = useRef<number | null>(null)
   const [tracks, setTracks] = useState<Track[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
@@ -154,6 +158,22 @@ export const TrackLibrary = () => {
     setCurrentPage(pageNumber)
   }
 
+  const handleAudioElementChange = (
+    trackId: number,
+    audioElement: HTMLAudioElement | null,
+  ) => {
+    if (!audioElement) {
+      trackAudioElementsRef.current.delete(trackId)
+      return
+    }
+
+    trackAudioElementsRef.current.set(trackId, audioElement)
+
+    if (pendingAutoPlayTrackIdRef.current === trackId) {
+      playTrackById(trackId)
+    }
+  }
+
   const handleAudioPlay = (
     trackId: number,
     nextAudioElement: HTMLAudioElement,
@@ -221,6 +241,56 @@ export const TrackLibrary = () => {
 
     return -comparison
   })
+
+  const playTrackById = (trackId: number) => {
+    const nextAudioElement = trackAudioElementsRef.current.get(trackId)
+
+    if (!nextAudioElement) {
+      pendingAutoPlayTrackIdRef.current = trackId
+      return
+    }
+
+    pendingAutoPlayTrackIdRef.current = null
+    nextAudioElement.currentTime = 0
+
+    void nextAudioElement.play().catch(() => {
+      pendingAutoPlayTrackIdRef.current = null
+    })
+  }
+
+  const handleTrackEnded = (
+    trackId: number,
+    audioElement: HTMLAudioElement,
+  ) => {
+    handleAudioEnded(trackId, audioElement)
+
+    const currentTrackIndex = sortedTracks.findIndex(
+      (track) => track.id === trackId,
+    )
+
+    if (currentTrackIndex === -1) {
+      return
+    }
+
+    const nextTrack = sortedTracks[currentTrackIndex + 1]
+
+    if (!nextTrack) {
+      return
+    }
+
+    const nextTrackPage =
+      Math.floor(currentTrackIndex / ITEMS_PER_PAGE) + 1
+
+    pendingAutoPlayTrackIdRef.current = nextTrack.id
+
+    if (nextTrackPage !== resolvedCurrentPage) {
+      setCurrentPage(nextTrackPage)
+      return
+    }
+
+    playTrackById(nextTrack.id)
+  }
+
   const totalPages = Math.ceil(sortedTracks.length / ITEMS_PER_PAGE)
   const resolvedCurrentPage =
     totalPages === 0 ? 1 : Math.min(currentPage, totalPages)
@@ -325,7 +395,8 @@ export const TrackLibrary = () => {
                       hasDeleteColumn={hasDeleteColumn}
                       isDeleting={deletingTrackId === track.id}
                       key={track.id}
-                      onAudioEnded={handleAudioEnded}
+                      onAudioElementChange={handleAudioElementChange}
+                      onAudioEnded={handleTrackEnded}
                       onAudioPause={handleAudioPause}
                       onAudioPlay={handleAudioPlay}
                       onDeleteTrack={
