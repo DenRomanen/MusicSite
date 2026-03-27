@@ -6,6 +6,7 @@ import { authRouter } from './routes/authRoutes.js'
 import { trackRouter } from './routes/trackRoutes.js'
 
 export const app = express()
+app.set('trust proxy', true)
 
 const healthcheckResponse = {
   endpoints: {
