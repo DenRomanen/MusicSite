@@ -164,12 +164,16 @@ Frontend будет доступен на `http://localhost:5173`, backend на 
 Env-переменные для Render:
 
 - `PORT=10000`
+- `ADMIN_LOGIN=<admin login>`
+- `ADMIN_PASSWORD=<admin password>`
 - `DATABASE_URL=<Supabase Postgres connection string>`
 - `JWT_SECRET=<long random secret>`
 - `SUPABASE_URL=<Supabase project URL>`
 - `SUPABASE_SERVICE_ROLE_KEY=<Supabase service role key>`
 - `SUPABASE_BUCKET=audio`
 - `FRONTEND_URL=<Netlify site URL>`
+
+Render не использует ваш локальный `backend/.env`, поэтому все runtime-переменные из списка выше нужно добавить в `Environment` у сервиса вручную.
 
 После деплоя получите backend URL вида:
 

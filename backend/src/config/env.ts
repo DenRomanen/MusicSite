@@ -70,6 +70,6 @@ export const assertRequiredRuntimeEnv = (context: string) => {
   }
 
   throw new Error(
-    `Missing required environment variables for ${context}: ${missingRuntimeEnv.join(', ')}. Copy backend/.env.example to backend/.env and fill in the values.`,
+    `Missing required environment variables for ${context}: ${missingRuntimeEnv.join(', ')}. For local development, copy backend/.env.example to backend/.env and fill in the values. For cloud deploys like Render, set the same variables in the service environment.`,
   )
 }
