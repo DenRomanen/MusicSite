@@ -7,6 +7,16 @@ import { trackRouter } from './routes/trackRoutes.js'
 
 export const app = express()
 
+const healthcheckResponse = {
+  endpoints: {
+    auth: '/api/auth',
+    health: '/health',
+    tracks: '/api/tracks'
+  },
+  message: 'Music Room backend is running',
+  status: 'ok'
+} as const
+
 const isAllowedOrigin = (origin: string | undefined) => {
   if (!origin) {
     return true
@@ -23,6 +33,16 @@ app.use(
   }),
 )
 app.use(express.json())
+
+app.get('/', (_request, response) => {
+  response.json(healthcheckResponse)
+})
+
+app.get('/health', (_request, response) => {
+  response.json({
+    status: healthcheckResponse.status
+  })
+})
 
 app.use('/api/auth', authRouter)
 app.use('/api/tracks', trackRouter)
