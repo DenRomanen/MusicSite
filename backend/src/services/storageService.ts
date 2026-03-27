@@ -10,6 +10,7 @@ type UploadedAudioFile = {
 }
 
 let supabaseClient: SupabaseClient | null = null
+const AUDIO_URL_TTL_SECONDS = 60 * 60 * 24
 
 const getSupabaseClient = () => {
   if (supabaseClient) {
@@ -68,6 +69,22 @@ export const uploadAudioFile = async (
     filePath,
     fileUrl: data.publicUrl
   }
+}
+
+export const getStorageFileUrl = async (filePath: string) => {
+  const supabase = getSupabaseClient()
+  const { data, error } = await supabase.storage
+    .from(env.supabaseBucket)
+    .createSignedUrl(filePath, AUDIO_URL_TTL_SECONDS)
+
+  if (error || !data?.signedUrl) {
+    throw new HttpError(
+      502,
+      'Не удалось получить ссылку на аудиофайл из Supabase Storage',
+    )
+  }
+
+  return data.signedUrl
 }
 
 export const removeStorageFile = async (filePath: string) => {

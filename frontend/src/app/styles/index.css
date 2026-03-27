@@ -54,6 +54,45 @@ select {
   min-height: 100vh;
 }
 
+.bootstrap-error {
+  display: flex;
+  min-height: 100vh;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.bootstrap-error__panel {
+  width: min(560px, 100%);
+  padding: clamp(24px, 5vw, 40px);
+  border: 1px solid var(--surface-border);
+  border-radius: 28px;
+  background: var(--surface-strong);
+  box-shadow: var(--shadow-soft);
+}
+
+.bootstrap-error__eyebrow {
+  display: inline-flex;
+  margin-bottom: 14px;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--danger);
+}
+
+.bootstrap-error__panel h1 {
+  margin: 0 0 12px;
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 400;
+  line-height: 1;
+}
+
+.bootstrap-error__panel p {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
 .page-shell {
   display: flex;
   min-height: 100vh;
@@ -468,7 +507,7 @@ select {
   justify-content: center;
   gap: 10px;
  
-  padding: 0 18px;
+  padding: 9px 18px;
   border: 1px solid transparent;
   border-radius: 999px;
   cursor: pointer;

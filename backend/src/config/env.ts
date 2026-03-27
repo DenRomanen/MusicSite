@@ -57,3 +57,15 @@ export const getMissingRuntimeEnv = () => {
     .filter(([, value]) => !value)
     .map(([environmentVariableName]) => environmentVariableName)
 }
+
+export const assertRequiredRuntimeEnv = (context: string) => {
+  const missingRuntimeEnv = getMissingRuntimeEnv()
+
+  if (missingRuntimeEnv.length === 0) {
+    return
+  }
+
+  throw new Error(
+    `Missing required environment variables for ${context}: ${missingRuntimeEnv.join(', ')}. Copy backend/.env.example to backend/.env and fill in the values.`,
+  )
+}

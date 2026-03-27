@@ -1,3 +1,4 @@
+import { assertRequiredRuntimeEnv } from '../config/env.js'
 import { initializeDatabase, query } from '../db/database.js'
 
 type UserSummaryRow = {
@@ -7,6 +8,7 @@ type UserSummaryRow = {
 }
 
 const listUsers = async () => {
+  assertRequiredRuntimeEnv('users:list script')
   await initializeDatabase()
   const result = await query<UserSummaryRow>(
     'SELECT id, login, created_at FROM users ORDER BY id',
@@ -21,4 +23,7 @@ const listUsers = async () => {
   console.table(userRows)
 }
 
-void listUsers()
+void listUsers().catch((error) => {
+  console.error(error)
+  process.exit(1)
+})

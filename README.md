@@ -57,7 +57,7 @@ Copy-Item frontend/.env.example frontend/.env.local
 
 ```env
 PORT=10000
-DATABASE_URL=postgresql://postgres.your-project:<db-password>@aws-0-eu-central-1.pooler.supabase.com:6543/postgres?sslmode=require
+DATABASE_URL=postgresql://postgres.your-project:<db-password>@aws-0-eu-central-1.pooler.supabase.com:5432/postgres?sslmode=require
 JWT_SECRET=replace-with-a-long-random-secret
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
@@ -184,6 +184,8 @@ https://your-backend-name.onrender.com
 Env-переменная для Netlify:
 
 - `VITE_API_URL=https://your-backend-name.onrender.com`
+
+On Netlify, set `VITE_API_URL` in `Site configuration -> Environment variables`. This value is available at build time and becomes part of the frontend bundle, so sensitive values should not be committed to the repository.
 
 В проект уже добавлен файл `frontend/public/_redirects`:
 

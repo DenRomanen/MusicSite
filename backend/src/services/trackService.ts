@@ -1,5 +1,9 @@
 import { query } from '../db/database.js'
-import { removeStorageFile, uploadAudioFile } from './storageService.js'
+import {
+  getStorageFileUrl,
+  removeStorageFile,
+  uploadAudioFile
+} from './storageService.js'
 import { HttpError } from '../utils/httpError.js'
 
 type TrackRow = {
@@ -21,11 +25,14 @@ type CreateTrackInput = {
   uploadedBy: number
 }
 
-const mapTrackRowToResponse = (trackRow: TrackRow, viewerId: number | undefined) => ({
+const mapTrackRowToResponse = async (
+  trackRow: TrackRow,
+  viewerId: number | undefined,
+) => ({
   id: trackRow.id,
   title: trackRow.title,
   artist: trackRow.artist,
-  audioUrl: trackRow.file_url,
+  audioUrl: await getStorageFileUrl(trackRow.file_path),
   createdAt: new Date(trackRow.created_at).toISOString(),
   canDelete: viewerId === trackRow.uploaded_by
 })
@@ -48,7 +55,9 @@ export const listTracks = async (viewerId?: number) => {
     `,
   )
 
-  return result.rows.map((trackRow) => mapTrackRowToResponse(trackRow, viewerId))
+  return Promise.all(
+    result.rows.map((trackRow) => mapTrackRowToResponse(trackRow, viewerId)),
+  )
 }
 
 export const createTrack = async ({

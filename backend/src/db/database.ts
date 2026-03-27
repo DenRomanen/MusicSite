@@ -1,23 +1,48 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import { Pool, QueryResult, QueryResultRow } from 'pg'
+import { Pool, PoolConfig, QueryResult, QueryResultRow } from 'pg'
 import { env } from '../config/env.js'
 
 let databasePool: Pool | null = null
 let initializationPromise: Promise<Pool> | null = null
+
+const normalizeDatabaseUrl = (databaseUrl: string) => {
+  if (!databaseUrl.includes('supabase.com')) {
+    return databaseUrl
+  }
+
+  const parsedDatabaseUrl = new URL(databaseUrl)
+
+  parsedDatabaseUrl.searchParams.delete('sslmode')
+  parsedDatabaseUrl.searchParams.delete('uselibpqcompat')
+
+  return parsedDatabaseUrl.toString()
+}
+
+const getDatabasePoolConfig = (): PoolConfig => {
+  if (!env.databaseUrl) {
+    throw new Error('DATABASE_URL is required to connect to PostgreSQL')
+  }
+
+  const poolConfig: PoolConfig = {
+    connectionString: normalizeDatabaseUrl(env.databaseUrl)
+  }
+
+  if (env.databaseUrl.includes('supabase.com')) {
+    poolConfig.ssl = {
+      rejectUnauthorized: false
+    }
+  }
+
+  return poolConfig
+}
 
 const getDatabasePool = () => {
   if (databasePool) {
     return databasePool
   }
 
-  if (!env.databaseUrl) {
-    throw new Error('DATABASE_URL is required to connect to PostgreSQL')
-  }
-
-  databasePool = new Pool({
-    connectionString: env.databaseUrl
-  })
+  databasePool = new Pool(getDatabasePoolConfig())
 
   return databasePool
 }

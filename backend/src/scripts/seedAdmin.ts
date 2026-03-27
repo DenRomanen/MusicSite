@@ -1,7 +1,9 @@
+import { assertRequiredRuntimeEnv } from '../config/env.js'
 import { initializeDatabase } from '../db/database.js'
 import { ensureAdminUser } from '../services/authService.js'
 
 const seedAdminUser = async () => {
+  assertRequiredRuntimeEnv('seed script')
   await initializeDatabase()
   const wasCreated = await ensureAdminUser()
 
@@ -12,4 +14,7 @@ const seedAdminUser = async () => {
   )
 }
 
-void seedAdminUser()
+void seedAdminUser().catch((error) => {
+  console.error(error)
+  process.exit(1)
+})
