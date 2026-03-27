@@ -21,6 +21,9 @@ loadEnvironmentFile(path.join(repositoryRoot, '.env.local'))
 loadEnvironmentFile(path.join(backendRoot, '.env'))
 loadEnvironmentFile(path.join(backendRoot, '.env.local'))
 
+const normalizeFrontendUrl = (frontendUrl: string) =>
+  frontendUrl.trim().replace(/\/+$/, '')
+
 const resolveFrontendUrls = () => {
   const rawFrontendUrl = process.env.FRONTEND_URL?.trim()
 
@@ -30,7 +33,7 @@ const resolveFrontendUrls = () => {
 
   return rawFrontendUrl
     .split(',')
-    .map((frontendUrl) => frontendUrl.trim())
+    .map(normalizeFrontendUrl)
     .filter(Boolean)
 }
 
