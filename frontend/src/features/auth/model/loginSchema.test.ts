@@ -4,8 +4,8 @@ import { loginValidationSchema } from '@/features/auth/model/loginSchema'
 describe('loginValidationSchema', () => {
   it('accepts filled credentials', async () => {
     const validationResult = await loginValidationSchema.isValid({
-      login: 'musicadmin',
-      password: 'MusicAdmin2026!'
+      login: 'admin-login',
+      password: 'safe-password'
     })
 
     expect(validationResult).toBe(true)

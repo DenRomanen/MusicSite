@@ -8,12 +8,12 @@ describe('authService', () => {
   it('creates and verifies access tokens', () => {
     const token = createAccessToken({
       id: 7,
-      login: 'musicadmin'
+      login: 'admin-login'
     })
 
     expect(verifyAccessToken(token)).toEqual({
       id: 7,
-      login: 'musicadmin'
+      login: 'admin-login'
     })
   })
 })

@@ -35,6 +35,8 @@ const resolveFrontendUrls = () => {
 }
 
 export const env = {
+  adminLogin: process.env.ADMIN_LOGIN?.trim() ?? '',
+  adminPassword: process.env.ADMIN_PASSWORD?.trim() ?? '',
   backendRoot,
   databaseUrl: process.env.DATABASE_URL?.trim() ?? '',
   frontendUrls: resolveFrontendUrls(),
@@ -48,6 +50,8 @@ export const env = {
 
 export const getMissingRuntimeEnv = () => {
   const requiredEnvironmentVariables = [
+    ['ADMIN_LOGIN', env.adminLogin],
+    ['ADMIN_PASSWORD', env.adminPassword],
     ['DATABASE_URL', env.databaseUrl],
     ['SUPABASE_URL', env.supabaseUrl],
     ['SUPABASE_SERVICE_ROLE_KEY', env.supabaseServiceRoleKey]

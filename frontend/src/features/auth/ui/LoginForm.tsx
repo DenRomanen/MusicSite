@@ -72,7 +72,7 @@ export const LoginForm = () => {
               name="login"
               onBlur={handleBlur}
               onChange={handleChange}
-              placeholder="musicadmin"
+              placeholder="admin-login"
               value={values.login}
             />
             {touched.login && errors.login ? (

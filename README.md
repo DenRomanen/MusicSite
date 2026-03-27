@@ -35,8 +35,8 @@ Fullstack музыкальный сайт в формате monorepo:
 
 ## Тестовый логин
 
-- login: `musicadmin`
-- password: `MusicAdmin2026!`
+- login берётся из `ADMIN_LOGIN`
+- password берётся из `ADMIN_PASSWORD`
 
 ## Локальный запуск
 
@@ -57,6 +57,8 @@ Copy-Item frontend/.env.example frontend/.env.local
 
 ```env
 PORT=10000
+ADMIN_LOGIN=replace-admin-login
+ADMIN_PASSWORD=replace-admin-password
 DATABASE_URL=postgresql://postgres.your-project:<db-password>@aws-0-eu-central-1.pooler.supabase.com:5432/postgres?sslmode=require
 JWT_SECRET=replace-with-a-long-random-secret
 SUPABASE_URL=https://your-project.supabase.co
@@ -88,6 +90,8 @@ VITE_API_URL=http://localhost:10000
 ```bash
 npm run seed --workspace backend
 ```
+
+Скрипт создаст администратора со значениями из `ADMIN_LOGIN` и `ADMIN_PASSWORD`.
 
 8. Запустите приложения локально:
 

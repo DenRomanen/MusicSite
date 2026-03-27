@@ -15,9 +15,6 @@ export type AuthenticatedUser = {
   login: string
 }
 
-const ADMIN_LOGIN = 'musicadmin'
-const ADMIN_PASSWORD = 'MusicAdmin2026!'
-
 const toAuthenticatedUser = (userRow: Pick<UserRow, 'id' | 'login'>) => ({
   id: userRow.id,
   login: userRow.login
@@ -42,16 +39,16 @@ const findUserById = async (userId: number) => {
 }
 
 export const ensureAdminUser = async () => {
-  const existingAdmin = await findUserByLogin(ADMIN_LOGIN)
+  const existingAdmin = await findUserByLogin(env.adminLogin)
 
   if (existingAdmin) {
     return false
   }
 
-  const passwordHash = await bcrypt.hash(ADMIN_PASSWORD, 10)
+  const passwordHash = await bcrypt.hash(env.adminPassword, 10)
 
   await query('INSERT INTO users (login, password_hash) VALUES ($1, $2)', [
-    ADMIN_LOGIN,
+    env.adminLogin,
     passwordHash
   ])
 
