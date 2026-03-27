@@ -1,3 +1,4 @@
+import { SyntheticEvent } from 'react'
 import { Track } from '@/entities/track/model/types'
 import { formatTrackDate } from '@/shared/lib/formatTrackDate'
 import { Button } from '@/shared/ui/Button'
@@ -5,6 +6,18 @@ import { Button } from '@/shared/ui/Button'
 type TrackListRowProps = {
   hasDeleteColumn: boolean
   isDeleting: boolean
+  onAudioEnded: (
+    trackId: number,
+    audioElement: HTMLAudioElement,
+  ) => void
+  onAudioPause: (
+    trackId: number,
+    audioElement: HTMLAudioElement,
+  ) => void
+  onAudioPlay: (
+    trackId: number,
+    audioElement: HTMLAudioElement,
+  ) => void
   onDeleteTrack?: (trackId: number) => Promise<void>
   track: Track
 }
@@ -12,6 +25,9 @@ type TrackListRowProps = {
 export const TrackListRow = ({
   hasDeleteColumn,
   isDeleting,
+  onAudioEnded,
+  onAudioPause,
+  onAudioPlay,
   onDeleteTrack,
   track
 }: TrackListRowProps) => {
@@ -21,6 +37,18 @@ export const TrackListRow = ({
     }
 
     void onDeleteTrack(track.id)
+  }
+
+  const handleAudioPlay = (event: SyntheticEvent<HTMLAudioElement>) => {
+    onAudioPlay(track.id, event.currentTarget)
+  }
+
+  const handleAudioPause = (event: SyntheticEvent<HTMLAudioElement>) => {
+    onAudioPause(track.id, event.currentTarget)
+  }
+
+  const handleAudioEnded = (event: SyntheticEvent<HTMLAudioElement>) => {
+    onAudioEnded(track.id, event.currentTarget)
   }
 
   return (
@@ -55,6 +83,9 @@ export const TrackListRow = ({
           className="track-list__player"
           controls
           controlsList="nodownload"
+          onEnded={handleAudioEnded}
+          onPause={handleAudioPause}
+          onPlay={handleAudioPlay}
           preload="none"
           src={track.audioUrl}
         >

@@ -1,4 +1,4 @@
-import { ChangeEvent, useEffect, useState } from 'react'
+import { ChangeEvent, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { UploadTrackForm } from '@/features/tracks/ui/UploadTrackForm'
 import { Track, UploadTrackPayload } from '@/entities/track/model/types'
@@ -59,6 +59,8 @@ const getPaginationItems = (
 
 export const TrackLibrary = () => {
   const { isBootstrapping, token, user } = useAppSelector((state) => state.auth)
+  const currentPlayingAudioRef = useRef<HTMLAudioElement | null>(null)
+  const currentPlayingTrackIdRef = useRef<number | null>(null)
   const [tracks, setTracks] = useState<Track[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
@@ -112,6 +114,16 @@ export const TrackLibrary = () => {
       return
     }
 
+    if (
+      currentPlayingTrackIdRef.current === trackId &&
+      currentPlayingAudioRef.current
+    ) {
+      currentPlayingAudioRef.current.pause()
+      currentPlayingAudioRef.current.currentTime = 0
+      currentPlayingAudioRef.current = null
+      currentPlayingTrackIdRef.current = null
+    }
+
     setDeletingTrackId(trackId)
     const loadingToastId = toast.loading('Удаляем трек')
 
@@ -140,6 +152,53 @@ export const TrackLibrary = () => {
 
   const handlePageChange = (pageNumber: number) => {
     setCurrentPage(pageNumber)
+  }
+
+  const handleAudioPlay = (
+    trackId: number,
+    nextAudioElement: HTMLAudioElement,
+  ) => {
+    const currentPlayingAudio = currentPlayingAudioRef.current
+
+    if (currentPlayingAudio && currentPlayingAudio !== nextAudioElement) {
+      currentPlayingAudio.pause()
+      currentPlayingAudio.currentTime = 0
+    }
+
+    currentPlayingAudioRef.current = nextAudioElement
+    currentPlayingTrackIdRef.current = trackId
+  }
+
+  const handleAudioPause = (
+    trackId: number,
+    audioElement: HTMLAudioElement,
+  ) => {
+    if (currentPlayingTrackIdRef.current !== trackId) {
+      return
+    }
+
+    if (currentPlayingAudioRef.current !== audioElement) {
+      return
+    }
+
+    currentPlayingAudioRef.current = null
+    currentPlayingTrackIdRef.current = null
+  }
+
+  const handleAudioEnded = (
+    trackId: number,
+    audioElement: HTMLAudioElement,
+  ) => {
+    if (currentPlayingTrackIdRef.current !== trackId) {
+      return
+    }
+
+    if (currentPlayingAudioRef.current !== audioElement) {
+      return
+    }
+
+    currentPlayingAudioRef.current = null
+    currentPlayingTrackIdRef.current = null
   }
 
   const normalizedSearchValue = searchValue.trim().toLocaleLowerCase()
@@ -266,6 +325,9 @@ export const TrackLibrary = () => {
                       hasDeleteColumn={hasDeleteColumn}
                       isDeleting={deletingTrackId === track.id}
                       key={track.id}
+                      onAudioEnded={handleAudioEnded}
+                      onAudioPause={handleAudioPause}
+                      onAudioPlay={handleAudioPlay}
                       onDeleteTrack={
                         track.canDelete ? handleDeleteTrack : undefined
                       }
