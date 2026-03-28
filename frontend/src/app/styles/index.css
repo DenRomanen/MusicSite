@@ -468,7 +468,7 @@ select {
 }
 
 .track-list__player {
-  width: min(100%, 168px);
+  width: min(100%, 270px);
   height: 32px;
 }
 
