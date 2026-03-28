@@ -688,13 +688,25 @@ select {
     padding: 0;
   }
 
+  .track-list--with-actions .track-list__row,
+  .track-list:not(.track-list--with-actions) .track-list__row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .pagination {
     justify-content: flex-start;
   }
 
   .track-list__row {
-    grid-template-columns: minmax(0, 1fr);
+    align-items: flex-start;
+    min-height: auto;
     gap: 8px;
+    padding: 10px;
+  }
+
+  .track-list__cell--artist,
+  .track-list__cell--date {
+    display: none;
   }
 
   .track-list__cell--player,
@@ -705,6 +717,17 @@ select {
 
   .track-list__mobile-label {
     display: inline-flex;
+  }
+
+  .track-list__title {
+    display: -webkit-box;
+    overflow: hidden;
+    white-space: normal;
+    text-overflow: initial;
+    overflow-wrap: anywhere;
+    line-height: 1.3;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
   }
 
   .track-list__player {
