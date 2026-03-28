@@ -26,7 +26,8 @@ export const MainLayout = () => {
           className="brand-mark"
           to="/"
         >
-          Music Room
+          <span className="brand-mark__top">Музыкальная</span>
+          <span className="brand-mark__bottom">комната</span>
         </Link>
         <div className="header-actions">
           {isBootstrapping ? (

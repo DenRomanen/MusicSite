@@ -118,9 +118,28 @@ select {
 }
 
 .brand-mark {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 4px;
+  line-height: 0.92;
+  padding: 4px 0;
   font-family: 'Instrument Serif', Georgia, serif;
   font-size: clamp(2rem, 4vw, 3rem);
   letter-spacing: 0.04em;
+}
+
+.brand-mark__top {
+  font-family: 'Manrope', 'Segoe UI', sans-serif;
+  font-size: clamp(0.7rem, 1vw, 0.82rem);
+  font-weight: 700;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  color: var(--accent-strong);
+}
+
+.brand-mark__bottom {
+  font-size: clamp(2.15rem, 4.2vw, 3.4rem);
+  letter-spacing: 0.03em;
 }
 
 .header-actions {
@@ -195,9 +214,46 @@ select {
   font-size: clamp(1.9rem, 2.6vw, 2.9rem);
 }
 
+.hero-panel__title {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.hero-panel__title-lead {
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 8px 16px;
+  border: 1px solid rgba(154, 106, 58, 0.16);
+  border-radius: 999px;
+  background: linear-gradient(
+    135deg,
+    rgba(154, 106, 58, 0.14) 0%,
+    rgba(255, 255, 255, 0.9) 100%
+  );
+  font-family: 'Manrope', 'Segoe UI', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  color: var(--accent-strong);
+}
+
+.hero-panel__title-copy {
+  width: 100%;
+  line-height: 1.08;
+  text-wrap: pretty;
+}
+
 .hero-panel--compact p {
   max-width: 74ch;
   font-size: 0.94rem;
+}
+
+.hero-panel__note {
+  max-width: 60ch;
 }
 
 .hero-panel p,
@@ -662,6 +718,24 @@ select {
   .section-heading {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .brand-mark__top {
+    letter-spacing: 0.28em;
+  }
+
+  .hero-panel__title {
+    max-width: none;
+    gap: 10px;
+  }
+
+  .hero-panel__title-lead {
+    font-size: 0.52rem;
+    letter-spacing: 0.16em;
+  }
+
+  .hero-panel__title-copy {
+    max-width: none;
   }
 
   .header-actions {
